@@ -1,0 +1,37 @@
+name: テスト
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  unit:
+    name: 計算・保存データのテスト
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 凍結コピーを a4b8333 の index.html と照合するため履歴を取得
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+  ui:
+    name: 画面点検（375px・拡大・大きな文字／壊れた保存データ）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save playwright@1.49.1 axe-core@4.10.2
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+        env:
+          UI_OUT: tests/ui/out
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: tests/ui/out

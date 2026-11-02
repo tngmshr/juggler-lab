@@ -1,0 +1,9 @@
+{
+  "name": "juggler-lab",
+  "private": true,
+  "description": "ジャグラー分析ラボ（index.html 単体の PWA）のテスト用設定。依存パッケージなし。",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:ui": "node tests/ui/layout-check.js && node tests/ui/storage-check.js"
+  }
+}

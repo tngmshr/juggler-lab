@@ -1,2 +1,4 @@
 original_v1.0.html
 .claude/
+node_modules/
+tests/ui/out/

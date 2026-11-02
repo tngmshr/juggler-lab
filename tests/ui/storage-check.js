@@ -29,7 +29,9 @@ function serve(){const server=http.createServer((req,res)=>{let p=decodeURICompo
   const r=await page.evaluate(()=>({high:document.getElementById('liveHigh').textContent,err:document.getElementById('liveError').textContent,model:document.getElementById('liveModel').value,prior:document.getElementById('livePrior').value,notice:document.getElementById('recoveryNotice')?.hidden===false}));
   for(const t of ['before','data','live']){await page.click(`[data-tab="${t}"]`);await page.waitForTimeout(50)}
   const counts=await page.evaluate(()=>({hist:document.getElementById('historyCount').textContent,sessions:document.querySelectorAll('#sessionBody [data-session-view]').length}));
-  const okRun=!errors.length&&/%/.test(r.high)&&!r.err&&r.model&&['uniform','conservative'].includes(r.prior);if(!okRun)fail++;
-  console.log(`${okRun?'OK ':'NG '} ${name}：推定=${r.high||'(なし)'} 履歴=${counts.hist} 実戦=${counts.sessions}件${r.notice?' 退避通知あり':''}${r.err?' 入力エラー='+r.err:''}${errors.length?' JSエラー='+errors.join(' | '):''}`);
+  // 退避があれば：削除ボタンで退避キーが消え、再読み込み後もお知らせが出ないこと
+  let cleared='';if(r.notice){await page.click('[data-tab="data"]');await page.evaluate(()=>document.querySelectorAll('details').forEach(d=>d.open=true));const tools=await page.isVisible('#recoveryTools');await page.click('#clearRecovery');await page.reload();await page.waitForTimeout(150);const after=await page.evaluate(()=>({notice:!document.getElementById('recoveryNotice').hidden,keys:Object.keys(localStorage).filter(k=>k.endsWith('-recovery-v1')).length}));cleared=tools&&!after.notice&&!after.keys?' 退避削除OK':' 退避削除NG';}
+  const okRun=!errors.length&&/%/.test(r.high)&&!r.err&&r.model&&['uniform','conservative'].includes(r.prior)&&!cleared.includes('NG');if(!okRun)fail++;
+  console.log(`${okRun?'OK ':'NG '} ${name}：推定=${r.high||'(なし)'} 履歴=${counts.hist} 実戦=${counts.sessions}件${r.notice?' 退避通知あり':''}${cleared}${r.err?' 入力エラー='+r.err:''}${errors.length?' JSエラー='+errors.join(' | '):''}`);
   await ctx.close()}
  await browser.close();server.close();console.log(fail?`\n${fail} 件で問題あり`:'\nすべてのケースで落ちずに動作');process.exitCode=fail?1:0})().catch(e=>{console.error(e);process.exit(2)});
